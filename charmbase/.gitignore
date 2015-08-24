@@ -1,0 +1,6 @@
+*~
+*\#*
+*.pyc
+/.tox/
+/AnsibleCharm.egg-info/
+/.coverage
