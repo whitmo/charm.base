@@ -1,4 +1,4 @@
-from .model.namespace import dnr
+from .namespace import dnr
 
 
 def execution_context(environment=None,
