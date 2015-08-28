@@ -11,5 +11,5 @@ def execution_context(environment=None,
     """
     """
     xc = dnr.resolve("charmbase.model.context.ExecutionContext")
-    base_includes = base_includes or xc.default_modules.split()
+    base_includes = base_includes or xc._default_modules
     return xc(environment, tools, charmdir, tempdir, rootdir, init_dirs, base_includes)

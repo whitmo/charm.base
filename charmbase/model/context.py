@@ -30,7 +30,7 @@ class ExecutionContext(Namespace):
     _namespaces = {}
     _default_tool = {}
     _iso_dicts = '_tools',
-    environment_keys = textwrap.dedent("""
+    _environment_keys = textwrap.dedent("""
     JUJU_RELATION
     JUJU_RELATION_ID
     JUJU_UNIT_NAME
@@ -41,7 +41,7 @@ class ExecutionContext(Namespace):
     JUJU_ACTION_TAG
     """)
 
-    default_modules = """
+    _default_modules = """
     charmbase.model.tools
     charmbase.model.relation
     charmbase.model.config
@@ -60,9 +60,10 @@ class ExecutionContext(Namespace):
                  tempdir=None,
                  rootdir=None,
                  init_dirs=True,
-                 base_includes=default_modules.split(),
+                 base_includes=_default_modules,
                  add_includes=None,
                  resolver=dnr):
+
         self._root = True
         self._parent = None
         self.resolver = resolver
@@ -78,24 +79,13 @@ class ExecutionContext(Namespace):
             self.rootdir.makedirs_p()
             self.charmdir.makedirs_p()
 
-        for key, ns in self._children.items():
-            setattr(self, key, ns)
-
         juju_env = self.filter_map_by_prefix("JUJU_", self.environment)
         self.init_attrs(self, juju_env)
+
         self.init_attrs(self, self._tools)
         self.load_includes(base_includes)
-        self.load_includes(add_includes)
         self.initialize_children()
-
-
-    @staticmethod
-    def filter_map_by_prefix(prefix, map_):
-        return {
-            key.replace(prefix, ""): val \
-            for key, val in map_.items() \
-            if key.startswith(prefix)
-            }
+        self.load_includes(add_includes)
 
 
     @classmethod
@@ -153,8 +143,10 @@ class Env(Namespace):
     """
     Represent the environmental variable unfiltered as attributes
     """
-    def __init__(self, root=None, parent=None, resolver=None, includes=None):
-        super(Env, self).__init__(root, parent, resolver=resolver, includes=includes)
+    def __init__(self, root=None, parent=None,
+                 resolver=None, includes=None):
+        super(Env, self).__init__(root, parent,
+                                  resolver=resolver, includes=includes)
         self.init_attrs(self, self._root.environment)
 
 
