@@ -47,22 +47,18 @@ class registrator(object):
         key = name and name or resource.__name__.lower()
         regged_resource = registry.get(key, None)
         if regged_resource is not None:
-            raise self.error("%s conflicts with %s"
-                             % (resource, regged_resource))
+            raise self.error("%s conflicts with %s: %s"
+                             % (resource, key, regged_resource))
         registry[key] = resource
         setattr(cls, self.registry_name, registry)
-
-    def maybe_load(self, name):
-        if name.find('.') == -1:
-            return None
 
     def register_resource(self, cls, resource=None, name=None):
         if isinstance(resource, basestring):
             if not resource.find('.') == -1:
                 loaded = self.resolve(resource)
                 if loaded is not None:
-                    self._register_resource(cls, resource, name)
-                    return resource
+                    self._register_resource(cls, loaded, name)
+                    return loaded
                 else:
                     logger.warn("%s does not resolve to python path, "
                                 "treating as a resource name", resource)
