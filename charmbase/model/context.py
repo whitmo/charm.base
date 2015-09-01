@@ -80,12 +80,14 @@ class ExecutionContext(ToolNamespace):
         return self.unit_name.split('/')[0]
 
     @classmethod
-    def from_environment(cls):
+    def from_environment(cls, add_includes=None, override_includes=None):
         import os
         charmdir = path(os.environ['JUJU_CHARM_DIR'])
         return cls(environment=os.environ,
                    charmdir=charmdir,
-                   rootdir=path("/"))
+                   rootdir=path("/"),
+                   add_includes=add_includes,
+                   override_includes=override_includes)
 
     def flush(key):
         """

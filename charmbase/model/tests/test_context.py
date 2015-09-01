@@ -5,8 +5,10 @@ import pytest
 
 def test_initialize_convenience_function():
     from charmbase import execution_context
-    xc = execution_context(charmdir=here/"basecharm")
-    assert xc
+    xc = execution_context()
+    import os
+    assert xc.environment is os.environ
+    assert str(xc.rootdir) == "/"
 
 
 def test_xc_import():

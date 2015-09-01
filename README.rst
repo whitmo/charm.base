@@ -40,9 +40,29 @@ The entry point to the charm is the **execution context**.
 Simple Creation
 ~~~~~~~~~~~~~~~
 
-Here's how to get a basic one to play with::
+`charm.base` provides a convenience function.  If you give it no
+environment, it will use `os.environment` and attempt to run as if it
+were in an active charm hook.
 
     >>> from charmbase import execution_context
+
+For the most simpe case, your hook file would look like so::
+
+    >>> def main(xc):
+    ...     print "important charm stuff with %s" % xc
+
+    >>> if __name__ is "__main__":
+    ...     xc = execution_context()
+    ...     main(xc)
+    important charm stuff with <charmbase.model.context.ExecutionContext object at ...>
+
+In this way, your hook code could be imported and tested by passing in
+a dummy object for xc.  The execution context itself though allows for
+you to initial it with your own handrolled environment, charmdir and
+other overrides.
+
+So let it be your dummy!
+
     >>> from charmbase.model.tests import here
     >>> fake_env = dict(
     ...     JUJU_AGENT_SOCKET="@/var/lib/juju/agents/unit-test-0/agent.socket",
@@ -73,6 +93,7 @@ As well as conveniences derived from these vars:
 
     >>> xc.service_name
     'test'
+
 
 Filesystem isolation and manipulation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
