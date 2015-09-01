@@ -2,6 +2,7 @@
  charms.base
 =============
 
+A lightweight extensible core for juju charming in python
 
 Motivation
 ==========
