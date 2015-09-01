@@ -125,6 +125,20 @@ leader namespace::
     ... def is_leader(command="is-leader", runner=subprocess.check_output):
     ...     return runner([command])
 
+We could also add a data namespace to `Leader` to manage getting and
+setting data for the entire service::
+
+    >>> from charmbase.model.namespace import ToolNamespace
+
+
+    >>> @Leader.register_child("data")
+    ... class LeaderData(ToolNamespace):
+    ...     """ the service data """
+
+    >>> from charmbase.model.config import config_get
+    >>> from functools import partial
+    >>> lg = LeaderData.register_tool('get_state')(partial(config_get, command="leader-get"))
+
 Now, we will load our execution environment with an argument
 `add_includes`.  This argument loads a special callable that will
 replace all of our tools runners (ie subprocess calls) with mock
@@ -134,6 +148,26 @@ objects.
     >>> xc = execution_context(environment=fake_env,
     ...                        charmdir=here / 'basecharm',
     ...                        override_includes="charmbase.model.tests.runner_mocks")
+
+We have the default leader namespace::
+
+    >>> xc.leader
+    <charmbase.model.tools.Leader object ...>
+
+And a LeaderData namespace::
+
+    >>> xc.leader.data
+    <__main__.LeaderData object at ...>
+
+with a tool w/ a mocked runner.
+::
+
+    >>> xc.leader.data.get_state
+    <functools.partial object at ...>
+
+
+    >>> xc.leader.data.get_state.keywords['runner']
+    <Mock name='data.get_state' id='...'>
 
 We can now manipulate the output of the new tool:
 
@@ -157,6 +191,11 @@ So in one example, we've seen:
  * how to simply manage "tool" subprocess mocking (avoid stacks of mock.patch decorator or sideeffect whackamole)
  * arbitrary alteration of the object structure at initialization time
  * simple extension of namespaces by decorator (to a sideeffecting function)
+ * how to extend a namespace to have another level
+
+
+Extension decorators
+~~~~~~~~~~~~~~~~~~~~
 
 The current api provides decorators for register child namespaces to
 existing namespaces (available to any subclass of
@@ -165,3 +204,5 @@ existing namespaces (available to any subclass of
 `charmbase.model.namespace.ToolNamespace`).
 charmbase.model.context.ExecutionContext` is a tool namespace and may
 register both tools and child namespaces.
+
+The `leader` example above is a tooling example
