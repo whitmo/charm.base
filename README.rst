@@ -2,6 +2,7 @@
  charms.base
 =============
 
+
 Motivation
 ==========
 
@@ -9,7 +10,7 @@ Motivation
 library/framework for doing charming.  Using it and charming in
 general, I've desired to improve it in a few ways:
 
- - create a single entry point to interacting with live hook execution
+ - Have a single entry point to interacting with live hook execution
    environment.
 
  - Have a syntonic environment I can explore and discover more about
@@ -19,6 +20,7 @@ general, I've desired to improve it in a few ways:
 
  - Have a charming system that is naturally easy to extend to fit
    different usecases
+
 
 Side effects (when you want them)
 ---------------------------------
@@ -193,9 +195,10 @@ So in one example, we've seen:
  * simple extension of namespaces by decorator (to a sideeffecting function)
  * how to extend a namespace to have another level
 
+Let talk a bit deeper what makes this possible.
 
 Extension decorators
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The current api provides decorators for register child namespaces to
 existing namespaces (available to any subclass of
@@ -205,4 +208,30 @@ existing namespaces (available to any subclass of
 charmbase.model.context.ExecutionContext` is a tool namespace and may
 register both tools and child namespaces.
 
-The `leader` example above is a tooling example
+See the `leader` example above.
+
+
+Includes
+--------
+
+The `include` idiom is derived from the `pyramid` web framework
+project (as is the code for the dependency that powers it).  An
+include is either a callable or an importable object of some sort with
+the callable attribute `includeme`. This callable takes a namespace
+(usually the execution context).
+
+The execution context can take 3 kinds of includes:
+
+ 0. `base_includes`: define the default structure of the execution
+     context by importing generally useful namespace and tool
+     registrations.  Generally you don't need to change these unless
+     you are doing something radical.  Are loaded before child
+     initialization.
+
+ 1. `add_includes`: charmer specified includes allow for a charmer to
+    add registrations to create their own special namespace or
+    whatever floats their boat.
+
+ 2. `override_includes`: Are loaded after child initialization. These
+    includes can effect the structure resulting from the previous
+    include to do thigs like mock out tool calls (see `leader` example above).
