@@ -208,8 +208,58 @@ existing namespaces (available to any subclass of
 charmbase.model.context.ExecutionContext` is a tool namespace and may
 register both tools and child namespaces.
 
-See the `leader` example above.
+Defining an extension decorator for a namespace is twofold. Usually
+this would come with creating a special namespace and defining an
+`_iso_dict` class variable. This class variable used by a metaclass to
+make sure all subclasses have unique copies.
 
+ex. ::
+
+    >>> from charmbase.model.meta import registrator
+    >>> class HotNyan(ToolNamespace):
+    ...     _iso_dicts = '_cats', '_rainbows'
+    ...     class NyanError(RuntimeError):
+    ...         """E_TOO_MUCH_NYAN"""
+    ...     register_cats = registrator.factory('_cats', NyanError)
+    ...     register_rainbow = registrator.factory('_rainbows', NyanError)
+
+The `registrator` derived function will register type of python object
+except strings.  If it gets a string, it will attempt to resolve and
+load it as the registered object.
+
+    >>> HotNyan.register_cats('putty')('path.path')
+    <class 'path.Path'>
+
+    >>> "putty" in HotNyan._cats
+    True
+
+It will prevent overwriting though.
+
+    >>> HotNyan.register_cats('putty')(object())
+    Traceback (most recent call last):
+    NyanError: <object object at ...> conflicts with putty: <class 'path.Path'>
+
+If you feed it a function or a class, it will use a lowercased version
+of __name__ as the key:
+
+    >>> rbz = type("rainbow_Z", (), dict(pot="gold"))
+    >>> HotNyan.register_rainbow(rbz)
+    <class '__main__.rainbow_Z'>
+
+    >>> HotNyan._rainbows
+    {'rainbow_z': <class '__main__.rainbow_Z'>}
+
+The simplest form of processing your registrations is to affix them as
+attributes to your namespace (bag and tag so to speak) via the
+`init_attrs` staticmethod.
+
+    >>> ns = HotNyan()
+    >>> HotNyan.init_attrs(ns, dict(ns._cats, **ns._rainbows))
+    >>> ns.rainbow_z
+    <class '__main__.rainbow_Z'>
+
+    >>> ns.putty
+    <class 'path.Path'>
 
 Includes
 --------
