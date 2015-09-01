@@ -42,6 +42,7 @@ class ExecutionContext(ToolNamespace):
                  init_dirs=True,
                  base_includes=_default_modules,
                  add_includes=None,
+                 override_includes=None,
                  resolver=dnr):
 
         self._root = True
@@ -66,8 +67,9 @@ class ExecutionContext(ToolNamespace):
 
         self.init_attrs(self, self._tools)
         self.load_includes(base_includes)
-        self.initialize_children()
         self.load_includes(add_includes)
+        self.initialize_children()
+        self.load_includes(override_includes)
 
     @reify
     def charm_name(self):

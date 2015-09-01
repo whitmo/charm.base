@@ -44,3 +44,9 @@ def test_metadata_attrs(metadata_ns):
     assert md.provides == {'provides-relation': iface}
     assert md.requires == {'requires-relation': iface}
     assert md.peers == {'peer-relation': iface}
+
+
+def test_metadata_attr_missing(metadata_ns):
+    md, _ = metadata_ns
+    with pytest.raises(AttributeError):
+        md.wat

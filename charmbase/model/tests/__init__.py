@@ -56,6 +56,8 @@ class runner_mocks(stuf):
     def includeme(cls, ns):
         cls.current_run = mock_reg = cls()
         mock_reg.mock_all(ns)
+        ns.runner_mocks = mock_reg
+        ns.runner_mock_cleanup = partial(mock_reg.clear_all, ns)
 
     @classmethod
     def clear(cls, ns):
