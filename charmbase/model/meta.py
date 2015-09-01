@@ -1,6 +1,8 @@
 from functools import partial
 from logging import getLogger
+from dotted_name_resolver import DottedNameResolver
 
+dnr = DottedNameResolver()
 logger = getLogger(__name__)
 
 
@@ -29,24 +31,55 @@ class IsolatedDicts(type):
         return super(IsolatedDicts, meta).__new__(meta, name, bases, dct)
 
     def __init__(cls, name, bases, dct):
+
         super(IsolatedDicts, cls).__init__(name, bases, dct)
 
 
-def register_resource(cls, resource, registry_name=None):
-    registry = getattr(cls, registry_name)
-    #reg2 = getattr(resource, registry_name, None)
-    key = resource.__name__.lower()
-    ns = registry.get(key, None)
-    if ns is not None:
-        raise DuplicateNamespaceError("%s conflicts with %s" \
-                                      % (resource, ns))
-    registry[key] = resource
-    setattr(cls, registry_name, registry)
-    return resource
+class registrator(object):
 
+    def __init__(self, registry_name=None, error=None, resolver=dnr):
+        self.registry_name = registry_name
+        self.error = error
+        self.resolve = dnr.maybe_resolve
 
-def registrator(name):
-    return classmethod(partial(register_resource, registry_name=name))
+    def _register_resource(self, cls, resource, name=None):
+        registry = getattr(cls, self.registry_name)
+        key = name and name or resource.__name__.lower()
+        regged_resource = registry.get(key, None)
+        if regged_resource is not None:
+            raise self.error("%s conflicts with %s"
+                             % (resource, regged_resource))
+        registry[key] = resource
+        setattr(cls, self.registry_name, registry)
+
+    def maybe_load(self, name):
+        if name.find('.') == -1:
+            return None
+
+    def register_resource(self, cls, resource=None, name=None):
+        if isinstance(resource, basestring):
+            if not resource.find('.') == -1:
+                loaded = self.resolve(resource)
+                if loaded is not None:
+                    self._register_resource(cls, resource, name)
+                    return resource
+                else:
+                    logger.warn("%s does not resolve to python path, "
+                                "treating as a resource name", resource)
+
+            return partial(self.register_resource, cls, name=resource)
+        self._register_resource(cls, resource, name)
+        return resource
+
+    @classmethod
+    def factory(cls, name, error=Exception):
+        regger = cls(name, error)
+
+        @classmethod
+        def registrator(cls, resource=None, name=None, reg=regger):
+            return reg.register_resource(cls, resource, name)
+
+        return registrator
 
 
 # from pyramid

@@ -18,7 +18,9 @@ setup(name='charm.base',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-            "path.py"
+            "path.py",
+            'dotted_name_resolver',
+            'stuf'
       ],
       entry_points="""
       # -*- Entry points: -*-

@@ -1,3 +1,4 @@
 /charm.base.egg-info/
 *~
 /.coverage
+/charmbase/model/tests/.coverage

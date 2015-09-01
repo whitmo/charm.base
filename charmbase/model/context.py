@@ -1,32 +1,14 @@
+from .meta import dnr
+from .meta import reify
 from .namespace import Namespace
-from .namespace import dnr
-from .meta import registrator
-
+from .namespace import ToolNamespace
 from functools import wraps
 from path import path
 from tempfile import mkdtemp
-import os
 import textwrap
 
 
-"""
-declare -x JUJU_AGENT_SOCKET="@/var/lib/juju/agents/unit-ubuntu-0/agent.socket"
-declare -x JUJU_API_ADDRESSES="172.31.1.40:17070"
-declare -x JUJU_AVAILABILITY_ZONE=""
-declare -x JUJU_CHARM_DIR="/var/lib/juju/agents/unit-ubuntu-0/charm"
-declare -x JUJU_CONTEXT_ID="ubuntu/0-install-1002841046484389285"
-declare -x JUJU_DEBUG="/tmp/tmp.2esNGFMfdX"
-declare -x JUJU_ENV_NAME="ec2-va-1"
-declare -x JUJU_ENV_UUID="b8ba8824-16f2-43b0-8b10-5b1dfa063906"
-declare -x JUJU_HOOK_NAME="install"
-declare -x JUJU_MACHINE_ID="2"
-declare -x JUJU_METER_INFO=""
-declare -x JUJU_METER_STATUS="NOT SET"
-declare -x JUJU_UNIT_NAME="ubuntu/0"
-"""
-
-
-class ExecutionContext(Namespace):
+class ExecutionContext(ToolNamespace):
     _namespaces = {}
     _default_tool = {}
     _iso_dicts = '_tools',
@@ -51,8 +33,6 @@ class ExecutionContext(Namespace):
 
     cache = {}
 
-    register_tool = registrator('_tools')
-
     def __init__(self,
                  environment=None,
                  tools=None,
@@ -71,7 +51,12 @@ class ExecutionContext(Namespace):
         self.environment = environment or {}
         self._tools = tools or {}
 
-        self.tempdir = tempdir and path(tempdir) or path(mkdtemp(suffix=".charm"))
+        juju_env = self.filter_map_by_prefix("JUJU_", self.environment)
+        self.init_attrs(self, juju_env)
+
+        self.tempdir = tempdir and path(tempdir) \
+            or path(mkdtemp(suffix=".charm"))
+
         self.charmdir = charmdir and path(charmdir) or self.tempdir / 'charm'
         self.rootdir = rootdir and path(rootdir) or self.tempdir / 'root'
 
@@ -79,24 +64,26 @@ class ExecutionContext(Namespace):
             self.rootdir.makedirs_p()
             self.charmdir.makedirs_p()
 
-        juju_env = self.filter_map_by_prefix("JUJU_", self.environment)
-        self.init_attrs(self, juju_env)
-
         self.init_attrs(self, self._tools)
         self.load_includes(base_includes)
         self.initialize_children()
         self.load_includes(add_includes)
 
+    @reify
+    def charm_name(self):
+        return self.metadata.name
 
-    @classmethod
-    def from_yaml(cls, fp):
-        txt = path(fp).text()
-        data = yaml.load(txt)
-        return cls(**data)
+    @reify
+    def service_name(self):
+        return self.unit_name.split('/')[0]
 
     @classmethod
     def from_environment(cls):
-        return cls(environment=os.environ)
+        import os
+        charmdir = path(os.environ['JUJU_CHARM_DIR'])
+        return cls(environment=os.environ,
+                   charmdir=charmdir,
+                   rootdir=path("/"))
 
     def flush(key):
         """
@@ -148,15 +135,3 @@ class Env(Namespace):
         super(Env, self).__init__(root, parent,
                                   resolver=resolver, includes=includes)
         self.init_attrs(self, self._root.environment)
-
-
-class DuplicateNamespaceError(RuntimeError):
-    """
-    Duplicate namespace error
-    """
-
-
-class DuplicateDefaultToolError(RuntimeError):
-    """
-    Duplicate default tool error
-    """

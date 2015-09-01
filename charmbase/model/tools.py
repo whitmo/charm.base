@@ -11,9 +11,6 @@ unit-get       print public-address or private-address
 """
 
 
-
-
-
 @ctx.register_tool
 def owner_get(setting='tag', command="owner-get", runner=subprocess.call):
     """
@@ -22,9 +19,6 @@ def owner_get(setting='tag', command="owner-get", runner=subprocess.call):
     command = [command]
     command.append(setting)
     runner(command)
-
-
-
 
 
 @ctx.register_child
@@ -36,17 +30,8 @@ class Juju(ToolNamespace):
     juju-reboot    Reboot the host machine
     """
 
-    @classmethod
-    def register_default_tool(cls, tool):
-        key = tool.__name__.lower()
-        tool = cls._default_tools.get(key, None)
-        if tool is not None:
-            raise DuplicateDefaultToolError("%s conflicts with %s"\
-                                           %(tool, ns))
-        cls._default_tool[key] = tool
 
-
-@ctx.register_tool
+@Juju.register_tool('log')
 def juju_log(message, level=None, command="juju-log", runner=subprocess.call):
     command = [command]
     if level:
@@ -57,7 +42,7 @@ def juju_log(message, level=None, command="juju-log", runner=subprocess.call):
     return runner(command)
 
 
-@ctx.register_tool
+@Juju.register_tool('reboot')
 def juju_reboot(now=False, runner=subprocess.call, command='juju-reboot'):
     now and commmand.append("--now")
     runner(command)

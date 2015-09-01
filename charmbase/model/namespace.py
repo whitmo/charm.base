@@ -1,13 +1,13 @@
 """
 A bag of pointers
 """
-from dotted_name_resolver import DottedNameResolver
-from functools import partial
 from .meta import IsolatedDicts
 from .meta import registrator
+from .meta import dnr
 from textwrap import dedent
-from pprint import pprint as pp
-dnr = DottedNameResolver()
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 class Namespace(object):
@@ -18,7 +18,7 @@ class Namespace(object):
     _iso_dicts = '_children', '_includes',
 
     def __init__(self, root=None, parent=None, resolver=dnr, includes=None):
-        self._root = root is not None and root or True
+        self.root = self._root = root is not None and root or True
         self._parent = parent
         self.resolver = dnr
         self.initialize_children()
@@ -38,7 +38,13 @@ class Namespace(object):
             }
         return map_out
 
-    register_child = registrator('_children')
+    class DuplicateNamespaceError(RuntimeError):
+        """
+        Duplicate namespace error
+        """
+
+    register_child = registrator.factory('_children',
+                                         error=DuplicateNamespaceError)
 
     def initialize_children(self):
         root = self._root is True and self or self._root
@@ -48,6 +54,16 @@ class Namespace(object):
                 if not hasattr(self, name):
                     setattr(self, name, nsctor(root, parent, self.resolver))
 
+    def yield_callable(self, candidate):
+        includeme = getattr(candidate, 'includeme', None)
+        if callable(includeme):
+            yield includeme
+
+        if callable(candidate):
+            yield candidate
+
+        yield False
+
     def load_includes(self, specs):
         specs = isinstance(specs, basestring) \
             and dedent(specs).split() or specs
@@ -55,19 +71,29 @@ class Namespace(object):
         specs = specs and [x for x in specs if x] or []
 
         for spec in specs:
-            if not spec in self._includes:
+            if spec not in self._includes:
                 obj = self.resolver.resolve(spec)
                 self._includes[spec] = obj
-                includeme = getattr(obj, 'includeme', False)
+                includeme = next(self.yield_callable(obj))
                 if not (includeme is False):
                     includeme(self)
+                else:
+                    logger.warn("%s return a non-callable obj: %s", spec, obj)
 
 
 class ToolNamespace(Namespace):
     _iso_dicts = '_tools',
 
     def __init__(self, root=None, parent=None, resolver=dnr, includes=None):
-        super(ToolNamespace, self).__init__(root, parent, resolver=resolver, includes=includes)
+        super(ToolNamespace, self).__init__(root, parent,
+                                            resolver=resolver,
+                                            includes=includes)
         self.init_attrs(self, self._tools)
 
-    register_tool = registrator('_tools')
+    class DuplicateDefaultToolError(RuntimeError):
+        """
+        Duplicate default tool error
+        """
+
+    register_tool = registrator.factory('_tools',
+                                        error=DuplicateDefaultToolError)

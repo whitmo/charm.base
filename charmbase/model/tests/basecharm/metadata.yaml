@@ -1,0 +1,19 @@
+name: basecharm
+summary: <Fill in summary here>
+maintainer: Whit Morriss <Whit.Morriss@JATO7>
+description: |
+  <Multi-line description here>
+tags:
+  # Replace "misc" with one or more whitelisted tags from this list:
+  # https://juju.ubuntu.com/docs/authors-charm-metadata.html#charm-metadata
+  - misc
+subordinate: false
+provides:
+  provides-relation:
+    interface: interface-name
+requires:
+  requires-relation:
+    interface: interface-name
+peers:
+  peer-relation:
+    interface: interface-name
