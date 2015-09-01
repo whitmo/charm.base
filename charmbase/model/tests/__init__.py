@@ -28,11 +28,13 @@ class runner_mocks(stuf):
 
     def mock_ns_tools(self, ns, ns_name, tools):
         ns._original_tools = tools.copy()
-        for name, cbl in tools.items():
-            mock_name = "%s.%s" % (ns_name, name)
-            cls_s = self.setdefault(ns_name, stuf())
-            rmock = cls_s[name] = Mock(name=mock_name)
-            tools[name] = partial(cbl, runner=rmock)
+        if tools:
+            for name, cbl in tools.items():
+                mock_name = "%s.%s" % (ns_name, name)
+                cls_s = self.setdefault(ns_name, stuf())
+                rmock = cls_s[name] = Mock(name=mock_name)
+                tools[name] = partial(cbl, runner=rmock)
+            ns.init_attrs(ns, ns._tools)
         return tools
 
     def clear_ns(self, ns):

@@ -92,9 +92,14 @@ Both of these are path objects, giving easy access to a variety of
 operations common to charming
 ::
 
-    >>> [string(x.name) for x in xc.charmdir.files()]
+    >>> sorted([str(x.name) for x in xc.charmdir.files()])
+    ['README.example', 'config.yaml', 'icon.svg', 'metadata.yaml']
 
-    >>> xc.charmdir.metadata.text()
+    >>> from pprint import pprint as pp
+    >>> print (xc.charmdir / 'metadata.yaml').text()
+    name: basecharm
+    summary: <Fill in summary here>
+    ...
 
 
 Extension and inversion of control
@@ -115,8 +120,9 @@ Let's demonstrate a simple example.  We'll add `leader_yolo` to our
 leader namespace::
 
     >>> from charmbase.model.tools import Leader
+    >>> import subprocess
     >>> @Leader.register_tool("leader_yolo")
-    >>> def is_leader(command="is-leader", runner=subprocess.check_output):
+    ... def is_leader(command="is-leader", runner=subprocess.check_output):
     ...     return runner([command])
 
 Now, we will load our execution environment with an argument
@@ -125,23 +131,26 @@ replace all of our tools runners (ie subprocess calls) with mock
 objects.
 ::
 
-    >>> xc = execution_context(environment=fake_env, charmdir=here / 'basecharm', add_includes="charmbase.model.test.runner_mocks")
+    >>> xc = execution_context(environment=fake_env,
+    ...                        charmdir=here / 'basecharm',
+    ...                        override_includes="charmbase.model.tests.runner_mocks")
 
 We can now manipulate the output of the new tool:
 
-    >>> xc.runner_mocks.leader.lead_yolo.return_value = "YOLO"
-    >>> xc.leader.lead_yolo()
-    "YOLO"
+    >>> xc.runner_mocks.leader.leader_yolo.return_value = "YOLO"
+    >>> xc.leader.leader_yolo()
+    'YOLO'
 
 We can now manipulate the output of an implicitly added tool:
 
-    >>> xc.runner_mocks.config.get_state.return_value = "'hey'"
+    >>> xc.runner_mocks.config.get_state.return_value = "1"
     >>> xc.config.get_state(key="wat")
-    'hey'
+    1
 
-We can clean up our class tree registrations so our tests are isolated:
+We can clean up our class tree registrations so our tests are
+isolated::
 
-    >>> xc.runner_mock_cleanup(ns)
+    >>> xc.runner_mock_cleanup()
 
 So in one example, we've seen:
 
@@ -154,5 +163,5 @@ existing namespaces (available to any subclass of
 `charmbase.model.namespace`), and a decorator for registering tools
 (available to any subclass of
 `charmbase.model.namespace.ToolNamespace`).
-`charmbase.model.context.ExecutionContext` is a tool namespace and may
+charmbase.model.context.ExecutionContext` is a tool namespace and may
 register both tools and child namespaces.
